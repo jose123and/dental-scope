@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Dental Scope Anatomia</string>
+    <string name="title_activity_main">Dental Scope Anatomia</string>
+    <string name="package_name">com.carpulenet.dentalscope</string>
+    <string name="custom_url_scheme">com.carpulenet.dentalscope</string>
+</resources>
