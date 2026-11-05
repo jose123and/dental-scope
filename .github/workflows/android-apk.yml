@@ -52,6 +52,21 @@ jobs:
           chmod +x gradlew
           ./gradlew :app:assembleDebug --no-daemon
 
+      - name: Revisar permisos del APK
+        run: |
+          "$ANDROID_HOME/build-tools/36.0.0/aapt2" dump permissions android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Analizar APK con ClamAV
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y clamav clamav-freshclam
+          sudo systemctl stop clamav-freshclam || true
+          sudo freshclam
+          clamscan -i android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Calcular SHA256 del APK
+        run: sha256sum android/app/build/outputs/apk/debug/app-debug.apk
+
       - name: Guardar APK
         uses: actions/upload-artifact@v4
         with:
