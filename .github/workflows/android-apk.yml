@@ -62,7 +62,12 @@ jobs:
           sudo apt-get install -y clamav clamav-freshclam
           sudo systemctl stop clamav-freshclam || true
           sudo freshclam
-          clamscan -i android/app/build/outputs/apk/debug/app-debug.apk
+          set -o pipefail
+          clamscan --bytecode-timeout=60000 -i android/app/build/outputs/apk/debug/app-debug.apk 2>&1 | tee clamav-scan.log
+          if grep -Ei 'timed out|failed to run|Exceeded time limit' clamav-scan.log; then
+            echo "::error::ClamAV no completo todas las comprobaciones"
+            exit 1
+          fi
 
       - name: Calcular SHA256 del APK
         run: sha256sum android/app/build/outputs/apk/debug/app-debug.apk
