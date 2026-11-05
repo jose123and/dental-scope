@@ -72,6 +72,41 @@ jobs:
       - name: Calcular SHA256 del APK
         run: sha256sum android/app/build/outputs/apk/debug/app-debug.apk
 
+      - name: Enviar APK a VirusTotal
+        if: github.event.head_commit.message == 'Scan APK with VirusTotal'
+        env:
+          VT_API_KEY: ${{ secrets.VT_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${VT_API_KEY:-}" ]; then
+            echo "::error::Falta VT_API_KEY"
+            exit 1
+          fi
+
+          APK="android/app/build/outputs/apk/debug/app-debug.apk"
+          SHA=$(sha256sum "$APK" | cut -d' ' -f1)
+
+          curl -fsS -H "x-apikey: $VT_API_KEY"             https://www.virustotal.com/api/v3/files/upload_url             -o vt-url.json
+
+          URL=$(python3 -c 'import json; print(json.load(open("vt-url.json"))["data"])')
+
+          case "$URL" in
+            https://*) ;;
+            http://www.virustotal.com/*)
+              URL="https://${URL#http://}"
+              ;;
+            *)
+              echo "::error::URL inesperada"
+              exit 1
+              ;;
+          esac
+
+          curl -fsS -H "x-apikey: $VT_API_KEY"             -F "file=@$APK" "$URL"             -o vt-result.json
+
+          python3 -c 'import json; print("Analysis ID:", json.load(open("vt-result.json"))["data"]["id"])'
+
+          echo "Informe: https://www.virustotal.com/gui/file/$SHA/detection"
+
       - name: Guardar APK
         uses: actions/upload-artifact@v4
         with:
